@@ -1,0 +1,409 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>7º Encuentro de Ingenierías | Propuesta gráfica</title><style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#1d3b55;background:#eaf3f9}*{box-sizing:border-box}body{margin:0}main{max-width:1640px;margin:auto;padding:18px 22px 30px}.head{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:14px}.eyebrow{font-size:11px;letter-spacing:.2em;font-weight:800;color:#4d88a6}.head h1{font-size:clamp(20px,2.4vw,30px);margin:3px 0;letter-spacing:-.04em}.badge{border:1px solid #c1d8e8;background:white;padding:9px 13px;border-radius:30px;font-size:12px;font-weight:750}.viewport{position:relative;aspect-ratio:16/9;width:100%;overflow:hidden;border-radius:18px;border:1px solid #c4d9e8;background:#e7f2f9;box-shadow:0 24px 58px #19436818}.viewport canvas{display:block;width:100%;height:100%;touch-action:none}.copy{position:absolute;left:3%;top:5%;max-width:28%;pointer-events:none}.copy small{font-weight:900;letter-spacing:.18em;color:#3f92b2;font-size:clamp(8px,.8vw,12px)}.copy h2{font-size:clamp(17px,3.1vw,48px);line-height:.97;letter-spacing:-.055em;margin:10px 0;color:#153754}.copy p{font-size:clamp(9px,1vw,14px);color:#58768b;line-height:1.5}.status{position:absolute;right:2%;top:3%;background:#ffffffd9;border:1px solid #c4d9e8;border-radius:9px;padding:9px 12px;font-weight:750;font-size:12px;color:#50748c}.loading{position:absolute;inset:0;display:grid;place-items:center;z-index:5;background:#e9f4fa;color:#315b7c;font-weight:700;text-align:center;padding:20px}.controls{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:15px 0}button,select{font:inherit;cursor:pointer;border:1px solid #bfd4e5;background:white;padding:10px 13px;border-radius:10px;color:#264961;font-size:13px;font-weight:750;min-height:41px}button:hover,select:hover{border-color:#4da9d2}button.primary{background:#225d88;color:white;border-color:#225d88}#scrub{flex:1;min-width:150px;accent-color:#338cc0}#time{font-variant-numeric:tabular-nums;font-size:12px;white-space:nowrap;color:#577a95;font-weight:700}.foot{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;color:#607f95;font-size:12px}.foot strong{color:#254e6c}.key{display:flex;gap:6px;flex-wrap:wrap}.key span{background:#ffffffa8;border:1px solid #cadfea;border-radius:9px;padding:5px 8px}@media(max-width:650px){main{padding:10px}.copy{max-width:40%}.copy p{display:none}.status{font-size:9px;padding:6px}button,select{padding:8px 9px;font-size:12px}.head h1{font-size:20px}}
+</style></head><body><main><header class="head"><div><div class="eyebrow">UPAEP · EXPERIENCIA INMERSIVA</div><h1>7º Encuentro de Ingenierías</h1></div><span class="badge">12 disciplinas · 24 especialistas · 3D · 16:9</span></header><section class="viewport" id="viewport" aria-label="Animación tridimensional interactiva de doce ingenierías"><div class="copy"><small>UPAEP · DISEÑO Y TECNOLOGÍA</small><h2>7º Encuentro<br>de Ingenierías</h2><p>Propuesta gráfica</p></div><div class="loading" id="loading">Cargando escena tridimensional…</div></section><section class="controls"><button id="play" class="primary">❚❚ Pausar</button><button id="restart">↺ Reiniciar</button><select id="career" aria-label="Enfocar ingeniería"><option value="all">Todas las ingenierías</option><option value="0">Aeroespacial</option><option value="1">Biónica</option><option value="2">Civil</option><option value="3">Industrial</option><option value="4">Mecatrónica</option><option value="5">Química Industrial</option><option value="6">Software</option><option value="7">Agronomía</option><option value="8">Biotecnología</option><option value="9">Ciencia de Datos</option><option value="10">Computación y Sistemas</option><option value="11">Diseño Automotriz</option></select><select id="speed" aria-label="Velocidad"><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select><input id="scrub" type="range" min="0" max="38" step=".05" value="0" aria-label="Línea de tiempo"><span id="time">00:00 / 00:38</span></section><footer class="foot"><strong id="detail">12 ingenierías · 24 especialistas · trabajo coordinado</strong><span>Arrastra para girar · Rueda para acercar · Selecciona un módulo</span></footer></main><script type="module">
+const $=id=>document.getElementById(id);
+let THREE;
+try {
+  for (const url of [
+    'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js',
+    'https://unpkg.com/three@0.165.0/build/three.module.js',
+    'https://esm.sh/three@0.165.0'
+  ]) {
+    try { THREE=await import(url); break; } catch(error) { console.warn('CDN no disponible:',url,error); }
+  }
+  if(!THREE) throw new Error('Los tres servidores CDN están inaccesibles. Comprueba tu conexión a Internet.');
+} catch(e) { $('loading').textContent='No se pudo cargar el motor 3D: '+e.message; throw e; }
+
+const scene=new THREE.Scene();scene.background=new THREE.Color('#e9f3fa');scene.fog=new THREE.Fog('#e9f3fa',34,72);
+const view=$('viewport'),renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.45;renderer.outputColorSpace=THREE.SRGBColorSpace;view.prepend(renderer.domElement);
+const camera=new THREE.OrthographicCamera(-16,16,9,-9,.1,120);let theta=.65,phi=.75,size=24,focus=new THREE.Vector3(0,0,0),targetFocus=focus.clone(),targetSize=size;const radius=45;
+function frame(){const a=view.clientWidth/Math.max(1,view.clientHeight);camera.left=-size*a/2;camera.right=size*a/2;camera.top=size/2;camera.bottom=-size/2;camera.updateProjectionMatrix();camera.position.set(focus.x+radius*Math.sin(phi)*Math.sin(theta),focus.y+radius*Math.cos(phi),focus.z+radius*Math.sin(phi)*Math.cos(theta));camera.lookAt(focus);}
+function resize(){renderer.setSize(view.clientWidth,view.clientHeight,false);frame()}new ResizeObserver(resize).observe(view);
+scene.add(new THREE.HemisphereLight('#effbff','#b5c9d9',2.4));const sun=new THREE.DirectionalLight('#fff8ef',3.5);sun.position.set(-13,23,12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:65});sun.shadow.bias=-.0004;scene.add(sun);
+const mat=(c,metalness=.2,roughness=.4,extra={})=>new THREE.MeshStandardMaterial({color:c,metalness,roughness,...extra});
+const M={ground:mat('#e0ecf5',0,.95),base:mat('#9bb4c9',.45,.35),top:mat('#f9fcff',.05,.4),navy:mat('#22445f',.55,.27),blue:mat('#277abc',.44,.3),sky:mat('#65b8e8',.28,.32),cyan:mat('#54d6dc',.22,.27,{emissive:'#0a9bb5',emissiveIntensity:.25}),steel:mat('#a5bdce',.75,.27),dark:mat('#34495e',.64,.32),white:mat('#f8fcff',.15,.3),warm:mat('#f9b572',.25,.35),green:mat('#6aceb6',.22,.4),glass:mat('#87d7eb',.1,.12,{transparent:true,opacity:.5,depthWrite:false,side:THREE.DoubleSide}),black:mat('#162f46',.6,.23),soil:mat('#836f61',.1,.7),leaf:mat('#43a982',.07,.45)};
+const bg=new THREE.BoxGeometry(1,1,1),sg=new THREE.SphereGeometry(1,20,14);
+function mesh(g,m,p,x=0,y=0,z=0){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o}
+function box(p,m,x,y,z,w,h,d){const o=mesh(bg,m,p,x,y,z);o.scale.set(w,h,d);return o}
+function cyl(p,m,x,y,z,rt,rb,h,n=24){return mesh(new THREE.CylinderGeometry(rt,rb,h,n),m,p,x,y,z)}
+function ball(p,m,x,y,z,r){const o=mesh(sg,m,p,x,y,z);o.scale.setScalar(r);return o}
+function tor(p,m,x,y,z,r,t=.035,vertical=false){const o=mesh(new THREE.TorusGeometry(r,t,9,36),m,p,x,y,z);if(!vertical)o.rotation.x=Math.PI/2;return o}
+function tube(p,pts,r,m){return mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(q=>new THREE.Vector3(...q))),Math.max(12,pts.length*8),r,7,false),m,p)}
+function label(p,text,x=0,y=0,z=2.25,scale=1){
+ const ca=document.createElement('canvas');ca.width=1024;ca.height=110;
+ const ctx=ca.getContext('2d');ctx.clearRect(0,0,ca.width,ca.height);
+ ctx.font='800 58px system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#163D57';
+ ctx.fillText(text,512,58,964);
+ const tex=new THREE.CanvasTexture(ca);tex.colorSpace=THREE.SRGBColorSpace;
+ const o=new THREE.Mesh(new THREE.PlaneGeometry(3.70*scale,.39),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
+ // Text rests against the module's front vertical skirt (positive local z).
+ o.position.set(0,-.17,2.211);o.rotation.x=-.13;o.renderOrder=10;p.add(o);
+} 
+function link(p,a,b,r,m){const v1=new THREE.Vector3(...a),v2=new THREE.Vector3(...b),o=mesh(new THREE.CylinderGeometry(r,r,v1.distanceTo(v2),10),m,p,...v1.clone().add(v2).multiplyScalar(.5).toArray());o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v2.sub(v1).normalize());return o}
+const names=['Ingeniería Aeroespacial','Ingeniería Biónica','Ingeniería Civil','Ingeniería Industrial','Ingeniería Mecatrónica','Ingeniería Química Industrial','Ingeniería de Software','Ingeniería en Agronomía','Ingeniería en Biotecnología','Ingeniería en Ciencia de Datos','Ingeniería en Computación y Sistemas','Ingeniería en Diseño Automotriz'];
+const shorts=['AEROESPACIAL','BIÓNICA','CIVIL','INDUSTRIAL','MECATRÓNICA','QUÍMICA INDUSTRIAL','SOFTWARE','AGRONOMÍA','BIOTECNOLOGÍA','CIENCIA DE DATOS','COMPUTACIÓN Y SISTEMAS','DISEÑO AUTOMOTRIZ'];
+const accent=[M.sky,M.cyan,M.steel,M.blue,M.warm,M.green,M.blue,M.green,M.green,M.cyan,M.sky,M.warm];
+const positions=[[-7.35,-5.8],[-2.45,-5.8],[2.45,-5.8],[7.35,-5.8],[-7.35,0],[-2.45,0],[2.45,0],[7.35,0],[-7.35,5.8],[-2.45,5.8],[2.45,5.8],[7.35,5.8]];
+const ground=box(scene,M.ground,0,-.52,0,22,.2,19.2);ground.castShadow=false;for(let i=-10;i<=10;i++){const line=box(scene,M.top,i,-.412,0,.015,.004,19);line.castShadow=false}for(let i=-9;i<=9;i++){const line=box(scene,M.top,0,-.411,i,21.6,.004,.015);line.castShadow=false}
+const modules=[],cycles=[];
+function platform(i){const [x,z]=positions[i];const root=new THREE.Group();root.position.set(x,0,z);scene.add(root);box(root,M.base,0,-.19,0,4.34,.4,4.4);box(root,M.top,0,.04,0,4.25,.11,4.29);for(const sx of [-1,1])for(const sz of [-1,1])cyl(root,M.dark,sx*1.96,-.49,sz*1.98,.12,.15,.25,12);for(const s of [-1,1]){box(root,accent[i],0,.112,s*2.06,3.92,.05,.055);box(root,accent[i],s*2.04,.112,0,.055,.05,3.94)}const content=new THREE.Group();root.add(content);content.position.y=.13;label(root,shorts[i],0,-.17,2.23,1);modules.push({root,content,index:i,start:1.4+i*1.05});return content}
+const P=Array.from({length:12},(_,i)=>platform(i));
+// 01 Aeroespacial: two-stage launcher with fairing, interstage, metallic nozzle array, fins and solar satellite.
+{const p=P[0],launch=new THREE.Group();p.add(launch);launch.position.set(-.73,0,-.47);
+ cyl(launch,M.dark,0,.10,0,.72,.72,.18,48);tor(launch,M.cyan,0,.24,0,.68,.035);
+ const rocket=new THREE.Group();launch.add(rocket);
+ const body=cyl(rocket,M.white,0,1.48,0,.35,.38,2.25,48);
+ cyl(rocket,M.blue,0,.42,0,.385,.39,.34,48);cyl(rocket,M.navy,0,1.12,0,.365,.365,.11,48);
+ cyl(rocket,M.steel,0,2.62,0,.34,.35,.18,48);mesh(new THREE.ConeGeometry(.345,.91,48),M.white,rocket,0,3.15,0);
+ for(let y of [.59,1.9,2.4])tor(rocket,M.sky,0,y,0,.355,.016);
+ for(let k=0;k<4;k++){const a=k*Math.PI/2;const fin=box(rocket,M.blue,Math.cos(a)*.43,.51,Math.sin(a)*.43,.12,.82,.52);fin.rotation.y=-a;
+ const nozzle=cyl(rocket,M.dark,Math.cos(a)*.16,.10,Math.sin(a)*.16,.105,.16,.33,20);nozzle.material=M.steel;}
+ cyl(rocket,M.dark,0,.11,0,.205,.31,.43,36);
+ for(let k=0;k<5;k++){const a=k*Math.PI*2/5;box(rocket,M.navy,Math.cos(a)*.359,1.75,Math.sin(a)*.359,.025,.48,.09).rotation.y=-a;}
+ // launch service tower, rails, umbilicals
+ for(const x of [-.36,.36])box(p,M.steel,x,1.55,-1.25,.09,2.95,.09);
+ // Torre de servicio sin peldaños visibles.
+ tube(p,[[-.73,1.1,-.9],[-.73,1.1,-1.15],[0,1.25,-1.15]],.045,M.cyan);
+ const sat=new THREE.Group();sat.position.set(.99,1.65,-.48);p.add(sat);
+ box(sat,M.steel,0,0,0,.48,.5,.48);box(sat,M.navy,0,0,.255,.4,.36,.05);
+ for(let s of [-1,1]){const panel=new THREE.Group();panel.position.x=s*.32;sat.add(panel);box(panel,M.blue,s*.56,0,0,1.07,.033,.57);for(let j=0;j<5;j++)box(panel,M.sky,s*(.12+j*.22),.025,0,.012,.004,.56);}
+ cyl(sat,M.steel,0,.4,0,.036,.036,.42);ball(sat,M.cyan,0,.68,0,.09);
+ box(p,M.dark,1,.23,.83,1.37,.38,.66);for(let j=0;j<3;j++)box(p,M.sky,.56+j*.39,.58,.81,.27,.26,.055);
+ cycles.push(t=>{sat.position.y=1.65+Math.sin(t*1.65)*.15;sat.rotation.y=t*.16;rocket.position.y=Math.sin(t*.7)*.025;});}
+
+// 02 Biónica: complete anatomically readable transfemoral prosthesis on a motion-test stand.
+{const p=P[1];
+ box(p,M.dark,-.18,.23,-.17,2.55,.22,1.55);box(p,M.white,-.18,.38,-.17,2.38,.09,1.41);
+ const pr=new THREE.Group();pr.position.set(-.35,.48,-.30);p.add(pr);
+ // Thigh socket: tapered ergonomic shell with distinct upper cuff.
+ const thigh=new THREE.Group();pr.add(thigh);
+ cyl(thigh,M.navy,0,2.03,0,.32,.235,.81,36);
+ cyl(thigh,M.blue,0,2.46,0,.365,.32,.14,36);
+ for(const s of [-1,1])box(thigh,M.steel,s*.26,1.84,0,.065,.58,.18);
+ tor(thigh,M.cyan,0,1.57,0,.243,.032);
+ // Metal knee hinge: recognisable paired lateral joints and exposed rotary axle.
+ const knee=new THREE.Group();knee.position.y=1.51;thigh.add(knee);
+ ball(knee,M.dark,0,0,0,.20);
+ for(const s of [-1,1]){const joint=cyl(knee,M.steel,0,0,s*.22,.18,.18,.10,28);joint.rotation.x=Math.PI/2;cyl(knee,M.cyan,0,0,s*.28,.085,.085,.025,24).rotation.x=Math.PI/2;}
+ const shin=new THREE.Group();shin.position.y=-.13;knee.add(shin);
+ // Strong, leg-shaped tapered shank with titanium pylons.
+ cyl(shin,M.white,0,-.49,0,.19,.115,.82,32);
+ for(const s of [-1,1])box(shin,M.steel,s*.145,-.53,0,.045,.68,.15);
+ cyl(shin,M.dark,0,-.96,0,.13,.16,.19,28);
+ const ankle=new THREE.Group();ankle.position.set(0,-1.02,0);shin.add(ankle);
+ ball(ankle,M.steel,0,0,0,.16);
+ // Anatomically shaped foot with heel, arch, toe and carbon sole (front points toward +x).
+ const foot=new THREE.Shape();foot.moveTo(-.37,.02);foot.bezierCurveTo(-.46,-.12,-.44,-.25,-.25,-.29);
+ foot.bezierCurveTo(.08,-.32,.52,-.27,.68,-.22);foot.bezierCurveTo(.82,-.17,.81,-.07,.64,-.015);
+ foot.lineTo(.12,.04);foot.bezierCurveTo(-.03,.12,-.21,.15,-.37,.02);
+ mesh(new THREE.ExtrudeGeometry(foot,{depth:.34,bevelEnabled:true,bevelThickness:.045,bevelSize:.04,bevelSegments:3,curveSegments:20}),M.navy,ankle,0,-.06,-.17);
+ tube(ankle,[[-.31,-.28,.0],[.16,-.31,.0],[.72,-.21,.0]],.035,M.cyan);
+ // Calibration uprights + an informative display with flexion angle.
+ for(const x of [-1.27,1.22]){cyl(p,M.steel,x,.66,-.38,.075,.075,1.02,12);ball(p,M.cyan,x,1.2,-.38,.085)}
+ const c=document.createElement('canvas');c.width=256;c.height=128;const cx=c.getContext('2d'),tex=new THREE.CanvasTexture(c);
+ box(p,M.dark,1.19,1.38,.87,1.12,.65,.10);
+ mesh(new THREE.PlaneGeometry(1.02,.55),new THREE.MeshBasicMaterial({map:tex}),p,1.19,1.38,.934);
+ cycles.push(t=>{let bend=.15+.22*(.5+.5*Math.sin(t*1.3));thigh.rotation.z=.025*Math.sin(t*1.3);shin.rotation.z=-bend;ankle.rotation.z=bend*.73;
+ cx.fillStyle='#122b42';cx.fillRect(0,0,256,128);cx.fillStyle='#a3ddeb';cx.font='bold 19px sans-serif';cx.fillText('PRUEBA DE MARCHA',12,26);cx.fillStyle='#fff';cx.font='bold 26px sans-serif';cx.fillText((bend*57.2958).toFixed(1)+'°',15,67);cx.strokeStyle='#54d6dc';cx.lineWidth=3;cx.beginPath();for(let x=10;x<246;x++){const y=98-Math.sin(x*.06+t*1.3)*14;if(x===10)cx.moveTo(x,y);else cx.lineTo(x,y)}cx.stroke();tex.needsUpdate=true;
+ });}
+
+// 03 Civil: bridge shake-table with live accelerometer display.
+{const p=P[2],rig=new THREE.Group();p.add(rig);rig.position.set(-.25,0,-.43);
+ for(const x of [-1.45,1.45])box(rig,M.steel,x,.64,0,.24,1.20,1.65);
+ box(rig,M.navy,0,1.2,0,3.2,.16,1.3);box(rig,M.white,0,1.31,0,3.15,.055,1.22);
+ for(const z of [-.62,.62]){for(let i=0;i<5;i++){const x=-1.55+i*.62;link(rig,[x,1.36,z],[x+.31,2.15,z],.052,M.blue);link(rig,[x+.31,2.15,z],[x+.62,1.36,z],.052,M.blue)}link(rig,[-1.53,2.13,z],[1.53,2.13,z],.06,M.steel)}
+ for(let x=-1.4;x<1.5;x+=.35)box(rig,M.dark,x,1.345,0,.03,.01,.91);
+ // accelerated response chart as a texture that updates continuously
+ const c=document.createElement('canvas');c.width=512;c.height=256;const ctx=c.getContext('2d');const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+ const panelMat=new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide});box(p,M.dark,1.29,1.42,1.32,1.57,1.18,.12);
+ const screen=mesh(new THREE.PlaneGeometry(1.43,1.03),panelMat,p,1.29,1.42,1.393); // board faces scene front
+ box(p,M.steel,1.29,.72,1.29,.08,.5,.09);
+ cycles.push(t=>{rig.position.y=Math.sin(t*19)*.024;rig.position.x=-.25;
+ ctx.fillStyle='#10243c';ctx.fillRect(0,0,512,256);ctx.strokeStyle='#28465c';ctx.lineWidth=1;
+ for(let i=0;i<=8;i++){ctx.beginPath();ctx.moveTo(i*64,34);ctx.lineTo(i*64,234);ctx.stroke()}
+ for(let i=0;i<=5;i++){ctx.beginPath();ctx.moveTo(12,34+i*40);ctx.lineTo(500,34+i*40);ctx.stroke()}
+ ctx.fillStyle='#e2faff';ctx.font='bold 21px system-ui';ctx.fillText('ACELERÓMETRO',18,26);ctx.font='14px monospace';ctx.fillStyle='#94ccdf';ctx.fillText('Vibración · eje Z',18,248);
+ ctx.strokeStyle='#54d6dc';ctx.lineWidth=3;ctx.beginPath();for(let x=0;x<475;x++){const u=x/475,signal=Math.sin(u*27+t*8)*Math.exp(-u*.9)*40+Math.sin(u*86+t*18)*7;const y=135+signal;if(x===0)ctx.moveTo(x+18,y);else ctx.lineTo(x+18,y)}ctx.stroke();tex.needsUpdate=true});}
+
+// 04 Industrial: moving assembly-line with gantry and products.
+{const p=P[3];box(p,M.dark,0,.5,.25,3.3,.36,1);box(p,M.blue,0,.71,.25,3.2,.075,.9);for(let i=-5;i<=5;i++){const roll=cyl(p,M.steel,i*.28,.49,.78,.067,.067,.9,12);roll.rotation.x=Math.PI/2}for(let x of [-1.6,1.6])for(let z of [-.15,.65])box(p,M.steel,x,.2,z,.1,.5,.1);for(let x of [-1.35,1.3])box(p,M.steel,x,1.34,-.8,.12,2,.13);box(p,M.steel,0,2.33,-.8,2.7,.15,.18);const carriage=new THREE.Group();p.add(carriage);carriage.position.set(0,2.2,-.8);box(carriage,M.warm,0,-.24,0,.55,.48,.36);cyl(carriage,M.dark,0,-.59,0,.12,.12,.4);for(let s of [-1,1])box(carriage,M.dark,s*.18,-.89,0,.075,.38,.12);const products=[];for(let j=0;j<4;j++)products.push(box(p,j%2?M.warm:M.white,-1.2+j*.8,1.04,.25,.39,.49,.41));cycles.push(t=>{carriage.position.x=Math.sin(t*.74)*1.15;products.forEach((o,j)=>o.position.x=-1.55+(t*.45+j*.9)%3.1)})}
+// 05 Mecatrónica: articulated robotic manipulator and inspection conveyor.
+{const p=P[4];box(p,M.dark,-.65,.25,-.45,1.25,.25,1.16);cyl(p,M.steel,-.65,.52,-.45,.41,.43,.31);const yaw=new THREE.Group();yaw.position.set(-.65,.75,-.45);p.add(yaw);cyl(yaw,M.warm,0,0,0,.3,.32,.4);const sh=new THREE.Group();sh.position.y=.35;yaw.add(sh);ball(sh,M.navy,0,0,0,.28);box(sh,M.warm,0,.72,0,.32,1.48,.32);const el=new THREE.Group();el.position.y=1.45;sh.add(el);ball(el,M.navy,0,0,0,.28);box(el,M.warm,.56,0,0,1.12,.3,.32);const gr=new THREE.Group();gr.position.x=1.15;el.add(gr);cyl(gr,M.dark,0,-.18,0,.12,.12,.44);for(let s of [-1,1])box(gr,M.navy,s*.16,-.43,0,.09,.35,.12);box(p,M.dark,.52,.38,.81,2.5,.25,.77);box(p,M.blue,.52,.55,.81,2.43,.06,.68);for(let j=0;j<4;j++)box(p,M.white,-.45+j*.62,.82,.81,.3,.36,.3);cycles.push(t=>{yaw.rotation.y=Math.sin(t*.68)*.55;sh.rotation.z=-.2+Math.sin(t*.93)*.24;el.rotation.z=-.15+Math.cos(t*.93+.7)*.32;gr.rotation.z=Math.sin(t*2)*.12})}
+// 06 Química: paired reaction vessels with active impeller, transfer tubes and heat exchanger.
+{const p=P[5],tank=new THREE.Group();tank.position.set(-.72,0,-.35);p.add(tank);cyl(tank,M.steel,0,.32,0,.64,.64,.18);const glass=cyl(tank,M.glass,0,1.42,0,.59,.59,2.05,40);glass.castShadow=false;const liquid=cyl(tank,M.green,0,.79,0,.54,.54,.7);cyl(tank,M.white,0,2.5,0,.7,.7,.2);for(let y of [.47,1.3,2.32])tor(tank,M.dark,0,y,0,.6,.045);const stirring=new THREE.Group();tank.add(stirring);cyl(stirring,M.dark,0,1.53,0,.046,.046,1.83);for(let y of [1.13,1.7]){box(stirring,M.blue,0,y,0,.81,.065,.1);box(stirring,M.blue,0,y,0,.1,.065,.81)}box(tank,M.navy,0,2.75,0,.47,.31,.45);cyl(p,M.steel,1.12,1.18,-.3,.47,.47,2.07);cyl(p,M.white,1.12,2.27,-.3,.54,.54,.18);for(let y of [.6,1.22,1.85])tor(p,M.sky,1.12,y,-.3,.48,.035);tube(p,[[-.72,2.5,-.3],[-.72,2.95,-.3],[1.12,2.95,-.3],[1.12,2.34,-.3]],.083,M.sky);tube(p,[[-.72,.45,.4],[-.72,.45,1.12],[1.12,.45,1.12],[1.12,1,-.3]],.072,M.steel);box(p,M.dark,1.38,.24,1.12,1.13,.33,.58);for(let j=0;j<5;j++)box(p,M.sky,.94+j*.21,.46,1.12,.07,.22,.52);cycles.push(t=>{stirring.rotation.y=t*1.7;liquid.scale.y=.92+.09*Math.sin(t*3)})}
+// 07 Software: workstation, layered code panels, flowing processor nodes.
+{const p=P[6];box(p,M.white,0,.55,.3,3.45,.18,1.65);for(let x of [-1.5,1.5])box(p,M.steel,x,.26,.4,.12,.55,.12);const screens=[];for(let k=0;k<3;k++){const x=-1.05+k*1.04;box(p,M.navy,x,1.29,-.48,.99,.83,.095);const scr=box(p,M.blue,x,1.30,-.42,.86,.66,.015);screens.push(scr);box(p,M.steel,x,.77,-.45,.08,.25,.08);for(let j=0;j<5;j++)box(p,j%3===0?M.cyan:M.sky,x-.25+((j*17)%4)*.14,1.55-j*.108,-.405,.25,.036,.009)}box(p,M.dark,0,.68,.45,1.33,.05,.44);for(let j=0;j<7;j++)box(p,M.steel,-.53+j*.17,.72,.45,.1,.012,.19);const tower=box(p,M.dark,1.45,.52,1.03,.55,.85,.55);box(p,M.cyan,1.45,.66,1.323,.29,.26,.02);cycles.push(t=>screens.forEach((o,j)=>o.material=(Math.floor(t*2+j)%3===0)?M.cyan:M.blue))}
+// 08 Agronomía: cultivo inteligente original recuperado (versión 1).
+{const p=P[7];const plants=[];for(let row=0;row<3;row++){const z=-.8+row*.85;box(p,M.soil,-.55,.28,z,2.7,.3,.64);for(let j=0;j<6;j++){const x=-1.65+j*.43;const stem=cyl(p,M.leaf,x,.67,z,.036,.05,.42,8);for(let s of [-1,1]){const leaf=ball(p,M.leaf,x+s*.13,.82,z,.2);leaf.scale.set(.21,.075,.115)}plants.push(stem)}}cyl(p,M.steel,1.45,1.08,-1.04,.06,.08,1.93);box(p,M.white,1.45,2.04,-1.04,.63,.32,.35);box(p,M.cyan,1.45,2.06,-.85,.44,.16,.015);tube(p,[[1.5,.3,.7],[1.5,1.13,.7],[-1.77,1.13,.7]],.047,M.sky);for(let x of [-1.5,-.8,0,.8])cyl(p,M.cyan,x,1.09,.7,.07,.07,.11);const drone=new THREE.Group();p.add(drone);
+ drone.position.set(.55,2.5,-.2);
+ const droneBody=mesh(new THREE.SphereGeometry(1,20,14),M.white,drone);droneBody.scale.set(.29,.12,.23);
+ box(drone,M.navy,0,-.12,0,.16,.14,.15);ball(drone,M.cyan,0,-.18,.07,.066);
+ const rotors=[];
+ for(const dx of [-.42,.42])for(const dz of [-.36,.36]){
+  const arm=link(drone,[0,0,0],[dx,-.04,dz],.034,M.steel);
+  const motor=cyl(drone,M.dark,dx,-.02,dz,.08,.08,.11,18);
+  const prop=new THREE.Group();prop.position.set(dx,.07,dz);drone.add(prop);
+  for(const a of [0,Math.PI/2]){const blade=box(prop,M.sky,0,0,0,.51,.014,.072);blade.rotation.y=a;}
+  rotors.push(prop);
+ }
+ cycles.push(t=>{plants.forEach((o,j)=>{o.scale.y=.94+Math.sin(t*.85+j*.5)*.04});drone.position.set(.55+Math.sin(t*.7)*.78,2.43+Math.sin(t*1.9)*.11,-.2+Math.cos(t*.7)*.56);drone.rotation.z=Math.sin(t*.7)*.045;rotors.forEach((r,j)=>r.rotation.y=t*(j%2?-29:29));})}
+// 09 Biotechnology: bioreactor, rotating double helix, lab analyser.
+{const p=P[8];cyl(p,M.steel,-.9,.37,-.3,.63,.68,.25);const chamber=cyl(p,M.glass,-.9,1.46,-.3,.56,.56,2.15,36);chamber.castShadow=false;cyl(p,M.white,-.9,2.57,-.3,.66,.64,.2);tor(p,M.steel,-.9,.58,-.3,.59);tor(p,M.steel,-.9,2.27,-.3,.59);const dna=new THREE.Group();dna.position.set(-.9,1.45,-.3);p.add(dna);const pts1=[],pts2=[];for(let i=0;i<=60;i++){const y=-.86+i*.029,a=i*.25;pts1.push([Math.cos(a)*.3,y,Math.sin(a)*.3]);pts2.push([Math.cos(a+Math.PI)*.3,y,Math.sin(a+Math.PI)*.3])}tube(dna,pts1,.043,M.green);tube(dna,pts2,.043,M.blue);for(let i=0;i<15;i++){const y=-.8+i*.116,a=(y+.86)/.029*.25;link(dna,[Math.cos(a)*.3,y,Math.sin(a)*.3],[-Math.cos(a)*.3,y,-Math.sin(a)*.3],.027,M.steel)}box(p,M.white,1,.52,.12,1.47,.86,1.32);box(p,M.navy,1,1,.35,1.1,.8,.11);box(p,M.cyan,1,1.08,.415,.82,.49,.013);tube(p,[[-.9,2.5,-.3],[-.9,2.8,-.3],[1,2.8,-.3],[1,1.0,-.3]],.061,M.steel);cycles.push(t=>dna.rotation.y=t*.75)}
+// 10 Data science: compact three-screen animated digital analytics dashboard.
+{const p=P[9];box(p,M.white,0,.43,.26,3.35,.18,1.6);
+ const dashboards=[];
+ for(let j=0;j<3;j++){const x=-1.05+j*1.05;box(p,M.dark,x,1.36,-.32,.98,1.25,.11);
+ const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;const context=canvas.getContext('2d');const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+ const screen=mesh(new THREE.PlaneGeometry(.87,1.08),new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}),p,x,1.36,-.251);
+ box(p,M.steel,x,.65,-.32,.09,.23,.08);dashboards.push({context,texture,j});}
+ box(p,M.navy,0,.55,.86,2.1,.06,.48);for(let j=0;j<12;j++)box(p,M.steel,-.86+j*.15,.6,.86,.12,.012,.2);
+ cycles.push(t=>dashboards.forEach(({context:c,texture,j})=>{c.fillStyle='#10243c';c.fillRect(0,0,256,256);c.fillStyle='#b9e2ed';c.font='bold 16px system-ui';c.fillText(['TREND / 01','MODEL / 02','LIVE / 03'][j],15,27);
+ c.strokeStyle='#31516b';c.lineWidth=1;for(let y=58;y<235;y+=36){c.beginPath();c.moveTo(12,y);c.lineTo(244,y);c.stroke()}
+ if(j===0){c.beginPath();c.strokeStyle='#54d6dc';c.lineWidth=5;for(let k=0;k<45;k++){const x=13+k*5.2,y=168-Math.sin(k*.29+t*1.5)*35-Math.cos(k*.63-t)*13-k*.85;if(k===0)c.moveTo(x,y);else c.lineTo(x,y)}c.stroke()}
+ else if(j===1){for(let k=0;k<6;k++){const v=.3+.65*Math.abs(Math.sin(t*.75+k*.68));c.fillStyle=k%2?'#277abc':'#54d6dc';c.fillRect(19+k*37,224-v*146,22,v*146)}}
+ else {for(let k=0;k<7;k++){const a=k*Math.PI*2/7+t*.16,xx=128+Math.cos(a)*66,yy=143+Math.sin(a)*64;c.strokeStyle='#4d9eab';c.beginPath();c.moveTo(128,143);c.lineTo(xx,yy);c.stroke();c.fillStyle='#54d6dc';c.beginPath();c.arc(xx,yy,6,0,Math.PI*2);c.fill();}c.fillStyle='#ffffff';c.font='bold 26px monospace';c.fillText(String(Math.round(74+12*Math.sin(t))),91,150)}texture.needsUpdate=true}));}
+
+// 11 Computing systems: green PCB with copper traces and active chips.
+const PCB=mat('#287649',.15,.58);const PCBdeep=mat('#124E32',.15,.58);
+{const p=P[10];box(p,PCBdeep,0,.51,0,3.42,.3,2.35);box(p,PCB,0,.7,0,3.36,.09,2.3);box(p,M.dark,0,.87,0,1.17,.28,1.08);box(p,M.steel,0,1.07,0,1,.14,.91);box(p,M.navy,0,1.15,0,.66,.05,.6);for(let k=0;k<10;k++){const z=-.49+k*.11;for(const s of [-1,1])box(p,M.steel,s*.65,.93,z,.15,.07,.055)}for(let k=0;k<8;k++){const x=-.5+k*.14;for(const s of [-1,1])box(p,M.steel,x,.93,s*.61,.058,.07,.14)}const leds=[];for(let i=0;i<10;i++){const x=-1.48+(i%5)*.74,z=-.95+Math.floor(i/5)*1.85;tube(p,[[x,.78,z],[x*.57,.78,z],[x*.57,.79,0]],.025,M.steel);leds.push(ball(p,M.cyan,x,.86,z,.07))}for(let i=0;i<3;i++){box(p,M.steel,-1.2+i*.39,1.22,-.92,.25,.89,.19);box(p,M.dark,-1.2+i*.39,1.24,-.81,.2,.71,.03)}cycles.push(t=>{leds.forEach((o,j)=>{o.visible=(Math.floor(t*5+j)%4!==0)})})}
+
+// 12 Automotive — real 3D compact electric hatchback, based on reference JSON.
+// Light ice-blue Tesla-inspired fastback with red UPAEP design accents, dark panoramic glass and charging cable.
+// Unlike the previous billboard this model retains volume under camera orbit.
+{const p=P[11];
+ const paint=mat('#B6DCEF',.27,.33),bodyShade=mat('#83B8D4',.15,.52);
+ const bright=mat('#E9F6FF',.16,.28),glass=mat('#13243D',.23,.20),roof=mat('#172947',.22,.27);
+ const ruby=mat('#C8102E',.24,.32),accentRed=mat('#E63545',.19,.34);
+ const tire=mat('#192746',.04,.91),rim=mat('#435783',.62,.36),spoke=mat('#8A9CBC',.64,.3);
+ const lights=mat('#DDE6EA',.1,.28,{emissive:'#B2C8D6',emissiveIntensity:.2});
+ const car=new THREE.Group();p.add(car);car.position.set(0,.48,-.08);
+ // Extruded organic side silhouette: nose points to +X and the roof slopes into a short hood.
+ const silhouette=new THREE.Shape();
+ silhouette.moveTo(-1.82,.34);
+ silhouette.bezierCurveTo(-1.86,.59,-1.68,.75,-1.43,.78);
+ silhouette.lineTo(-1.05,.82);
+ silhouette.bezierCurveTo(-.82,1.17,-.54,1.53,-.13,1.59);
+ silhouette.bezierCurveTo(.39,1.65,.70,1.57,.97,1.21);
+ silhouette.lineTo(1.28,.88);
+ silhouette.bezierCurveTo(1.66,.85,1.81,.65,1.81,.43);
+ silhouette.lineTo(1.78,.19);silhouette.lineTo(-1.72,.19);silhouette.closePath();
+ const shapeGeo=new THREE.ExtrudeGeometry(silhouette,{depth:1.36,steps:1,bevelEnabled:true,bevelThickness:.095,bevelSize:.09,bevelSegments:3,curveSegments:16});
+ const shell=mesh(shapeGeo,paint,car,0,0,-.68);shell.castShadow=true;
+ // Undertray and bumpers have genuine depth rather than being image planes.
+ box(car,bodyShade,0,.22,0,3.5,.19,1.49);
+ box(car,bodyShade,1.67,.38,0,.25,.25,1.34);
+ box(car,bodyShade,-1.65,.38,0,.21,.20,1.34);
+ // Dark panoramic roof: tapered organic profile, not a box floating above the body.
+ const glassProfile=new THREE.Shape();
+ glassProfile.moveTo(-.95,.87);glassProfile.bezierCurveTo(-.68,1.24,-.48,1.47,-.13,1.50);
+ glassProfile.bezierCurveTo(.31,1.56,.61,1.47,.86,1.19);glassProfile.lineTo(1.02,.90);
+ glassProfile.lineTo(.86,.87);glassProfile.lineTo(-.93,.87);glassProfile.closePath();
+ const roofGeo=new THREE.ExtrudeGeometry(glassProfile,{depth:1.17,bevelEnabled:true,bevelThickness:.025,bevelSize:.027,bevelSegments:2,curveSegments:16});
+ const glassRoof=mesh(roofGeo,glass,car,0,.025,-.585);glassRoof.castShadow=false;
+ // Roof spine and narrow upper reflective band.
+ tube(car,[[-.75,1.25,-.60],[-.35,1.54,-.60],[.26,1.56,-.60],[.73,1.31,-.60]],.025,roof);
+ tube(car,[[-.75,1.25,.60],[-.35,1.54,.60],[.26,1.56,.60],[.73,1.31,.60]],.025,roof);
+ // Side door seams kept fine and non-photorealistic.
+ const seam=mat('#75A3BC',0,.76);
+ for(const z of [-.79,.79]){
+   tube(car,[[.08,.81,z],[.04,.48,z],[.05,.24,z]],.008,seam);
+   tube(car,[[-1.15,.80,z],[-1.15,.47,z]],.007,seam);
+ }
+ // Tesla-inspired clean EV front: no large grille, sculpted closed fascia and slim light signature.
+ const frontNose=new THREE.Group();car.add(frontNose);
+ box(frontNose,paint,1.79,.53,0,.095,.23,1.23);
+ // Continuous subtle light ribbon, red pinstripe and signature UPAEP red accent on sill.
+ box(car,bright,1.859,.72,0,.018,.035,1.08);
+ for(const z of [-.58,.58]){
+   const intake=box(car,roof,1.844,.37,z*.74,.022,.048,.28);
+   intake.rotation.y=z>0?.17:-.17;
+ }
+ for(const z of [-.735,.735]){
+   tube(car,[[-1.45,.37,z],[-.60,.355,z],[.53,.355,z],[1.42,.38,z]],.014,ruby);
+ }
+ // Panoramic roof: discreet A/B pillar framing and lower glazing edge.
+ for(const z of [-.6,.6]){
+   tube(car,[[-.90,.89,z],[-.57,1.38,z],[-.36,1.51,z]],.018,roof);
+   tube(car,[[.84,1.17,z],[1.03,.87,z]],.018,roof);
+ }
+ // Real four-wheel geometry and 15-degree steering on the FRONT axle only.
+ const wheels=[];
+ function makeWheel(x,z,front){
+   const pivot=new THREE.Group();pivot.position.set(x,.30,z);car.add(pivot);
+   const w=cyl(pivot,tire,0,0,0,.34,.34,.21,32);w.rotation.x=Math.PI/2;
+   const sign=Math.sign(z)||1;
+   const disc=cyl(pivot,rim,0,0,sign*.119,.242,.242,.014,32);disc.rotation.x=Math.PI/2;
+   for(let k=0;k<9;k++){
+     const a=k*Math.PI*2/9;
+     const s=box(pivot,spoke,Math.cos(a)*.117,Math.sin(a)*.117,sign*.135,.19,.033,.012);
+     s.rotation.z=a;
+   }
+   cyl(pivot,bright,0,0,sign*.149,.052,.052,.021,18).rotation.x=Math.PI/2;
+   if(front)wheels.push(pivot);
+ }
+ for(const z of [-.77,.77]){makeWheel(-1.08,z,false);makeWheel(1.09,z,true)}
+ // Thin front/rear lighting and a compact electric charge connector.
+ for(const z of [-.48,.48]){
+   const l=box(car,lights,1.865,.7,z,.045,.045,.35);l.rotation.y=z>0?-.08:.08;
+   box(car,accentRed,-1.805,.64,z,.048,.063,.38);
+ }
+ // Short sculpted rear lip and central rear red luminous bar.
+ box(car,bodyShade,-1.76,.77,0,.11,.045,1.18);
+ box(car,ruby,-1.864,.675,0,.028,.030,1.05);
+ const chargePort=box(car,roof,-.86,.70,-.778,.11,.095,.035);
+ const charger=mat('#142137',.12,.85);
+ tube(car,[[-.86,.70,-.81],[-1.02,.46,-1.04],[-1.28,.25,-1.19],[-1.62,.18,-1.24]],.028,charger);
+ // Keep vehicle static; front wheels steer gently but do not spin as if driving.
+ cycles.push(t=>{const steering=Math.sin(t*.76)*Math.PI/12;wheels.forEach(q=>q.rotation.y=steering)});
+}
+
+// VERSION 4 — 24 ergonomic operators. Organic silhouettes, machine-facing pose and task-specific interaction.
+// The attached 2.5D SVG art direction is interpreted as stylized Three.js geometry for this existing WebGL scene.
+const CHAR={blue:mat('#244278',.02,.91),white:mat('#F3F5F4',.02,.92),whiteShadow:mat('#CED9DC',.02,.92),teal:mat('#129E9A',.01,.86),orange:mat('#F29B14',.02,.86),shirt:mat('#126C91',.02,.84),red:mat('#C8102E',.02,.87),navy:mat('#205A73',.02,.87),gray:mat('#555A60',.02,.89),sand:mat('#C5BDAE',.02,.88),light:mat('#F1BE91',.01,.9),medium:mat('#D9976B',.01,.9),darkSkin:mat('#946445',.01,.9),brown:mat('#6A4431',.01,.95),blackHair:mat('#33393A',.01,.95),blond:mat('#E8A830',.01,.9),shoe:mat('#363839',.01,.84),screen:mat('#155077',.18,.43,{emissive:'#0b3a4b',emissiveIntensity:.16})};
+const actorStates=[];
+const rigSphere=new THREE.SphereGeometry(1,14,10);
+function oval(g,m,x,y,z,sx,sy,sz){const q=mesh(rigSphere,m,g,x,y,z);q.scale.set(sx,sy,sz);return q}
+function taper(p,m,x,y,z,top,bottom,length){const o=mesh(new THREE.CylinderGeometry(top,bottom,length,12,1),m,p,x,y,z);return o}
+function roundedTorso(p,m,w=.27){const s=new THREE.Shape();s.moveTo(-w*.77,.12);s.bezierCurveTo(-w,.22,-w,.43,-w*.78,.48);s.bezierCurveTo(-w*.42,.54,w*.42,.54,w*.79,.48);s.bezierCurveTo(w,.37,w,.18,w*.77,.12);s.bezierCurveTo(0,.06,-w*.7,.07,-w*.77,.12);return mesh(new THREE.ExtrudeGeometry(s,{depth:.115,bevelEnabled:true,bevelThickness:.04,bevelSize:.025,bevelSegments:2,curveSegments:9}),m,p,0,0,-.055)}
+// Single character height ≈ 1.05 world units (half scale relative to the first prototype).
+function makePerson(p,i,k,spot){
+ const female=((i*2+k)%5===0 || (i+k)%4===1),tone=[CHAR.light,CHAR.medium,CHAR.darkSkin][(i+k)%3],hair=[CHAR.blackHair,CHAR.brown,CHAR.blond][(i+k)%3];
+ const uniform=[0,1,2,3,4,11].includes(i)?CHAR.blue:([5,8].includes(i)?CHAR.white:([CHAR.teal,CHAR.shirt,CHAR.red,CHAR.orange][(i*2+k)%4]));
+ const trousers=(i+k)%3===0?CHAR.gray:(i+k)%3===1?CHAR.navy:CHAR.sand;
+ const g=new THREE.Group();g.position.set(spot[0],.14,spot[1]);g.scale.setScalar(.73);p.add(g);
+ // Facing the relevant machine/contact target; face points along local positive Z.
+ const destination=new THREE.Vector3(spot[2],0,spot[3]);g.rotation.y=Math.atan2(destination.x-spot[0],destination.z-spot[1]);
+ const hips=new THREE.Group();g.add(hips);
+ const legs=[];for(const s of [-1,1]){
+  const hip=new THREE.Group();hip.position.set(s*.091,.53,0);hips.add(hip);
+  taper(hip,trousers,0,-.165,0,.071,.055,.33);oval(hip,trousers,0,-.32,0,.055,.075,.059);
+  const knee=new THREE.Group();knee.position.set(0,-.32,0);hip.add(knee);
+  taper(knee,trousers,0,-.11,0,.055,.041,.22);oval(knee,CHAR.shoe,0,-.22,.051,.069,.045,.125);
+  legs.push({hip,knee});
+ }
+ oval(g,trousers,0,.55,0,.16,.105,.11);
+ const waist=new THREE.Group();waist.position.set(0,.56,0);g.add(waist);
+ const torso=new THREE.Group();torso.position.y=.04;waist.add(torso);
+ roundedTorso(torso,uniform,female?.205:.24);
+ // Apron coat tails, collar/lapels, subtle fabric folds.
+ if([0,1,2,3,4,5,8,11].includes(i)){
+  for(const s of [-1,1]){const tail=new THREE.Group();tail.position.set(s*.087,.13,.075);torso.add(tail);const flap=taper(tail,uniform,0,-.115,0,.087,.109,.24);flap.rotation.z=s*.07;}
+  for(const s of [-1,1]){const lapel=box(torso,uniform,s*.068,.36,.103,.076,.135,.012);lapel.rotation.z=s*.28;}
+  box(torso,CHAR.whiteShadow,0,.306,.12,.015,.17,.008);
+ }
+ taper(torso,tone,0,.548,0,.055,.049,.11);
+ const head=new THREE.Group();head.position.set(0,.687,0);torso.add(head);
+ oval(head,tone,0,.027,.008,.105,.13,.098);oval(head,tone,0,.005,.102,.026,.023,.039);
+ oval(head,hair,0,.137,-.013,.109,.05,.104);
+ if(female){oval(head,hair,0,.077,-.083,.10,.12,.056);oval(head,hair,-.072,.045,-.071,.045,.16,.05);}
+ else {oval(head,hair,-.052,.076,-.069,.047,.07,.038);}
+ // Explicit shoulder, elbow and wrist pivots (not a single spinning limb).
+ const arms=[];for(const s of [-1,1]){
+  const shoulder=new THREE.Group();shoulder.position.set(s*(female?.178:.202),.461,0);torso.add(shoulder);
+  oval(shoulder,uniform,0,-.032,0,.075,.098,.071);
+  taper(shoulder,uniform,0,-.108,0,.063,.048,.199);
+  const elbow=new THREE.Group();elbow.position.set(0,-.207,0);shoulder.add(elbow);
+  oval(elbow,uniform,0,0,0,.052,.055,.05);
+  taper(elbow,uniform,0,-.089,0,.048,.033,.173);
+  const wrist=new THREE.Group();wrist.position.set(0,-.179,.01);elbow.add(wrist);
+  oval(wrist,tone,0,-.035,.017,.043,.065,.042);oval(wrist,tone,-s*.03,-.032,.052,.022,.037,.022);
+  arms.push({shoulder,elbow,wrist,side:s});
+ }
+ const eyewear=[3,6,9].includes(i) && (i===6 || k===0);if(eyewear){const v=box(head,CHAR.screen,0,.034,.111,.22,.092,.07);v.rotation.x=-.07;box(head,M.cyan,0,.034,.151,.185,.027,.008);for(const s of [-1,1])box(head,CHAR.gray,s*.112,.045,0,.015,.021,.16);}
+ const action=k===0?'operate':'inspect';
+ // Purposeful interaction consoles placed beside the device and aligned to operator's forward reach.
+ const device=new THREE.Group();device.position.set(spot[2],.14,spot[3]);p.add(device);device.scale.setScalar(.72);
+ let target;
+ if(action==='operate'){
+  const stand=taper(device,M.steel,0,.35,0,.035,.062,.7);
+  const panel=box(device,CHAR.screen,0,.75,0,.42,.235,.075);panel.rotation.x=-.22;
+  box(device,M.cyan,0,.79,.047,.28,.025,.008);
+  for(let q=0;q<3;q++)oval(device,q===1?M.warm:M.cyan,(q-1)*.105,.713,.055,.019,.015,.012);
+  target=new THREE.Vector3(0,.75,.06);
+ }else{
+  box(device,M.steel,0,.42,0,.31,.065,.25);
+  const table=box(device,CHAR.screen,0,.49,0,.29,.024,.18);
+  box(device,M.warm,.04,.515,.01,.09,.018,.073);
+  target=new THREE.Vector3(.04,.51,.03);
+ }
+ actorStates.push({g,waist,torso,head,arms,legs,device,target,action,i,k,phase:(i*2+k)*.57,period:[6.8,7.4,6.2,7,8.1,7.7][(i+k)%6]});
+ return g;
+}
+// Paired operators have distinct orientations. Each is aligned toward its own real console.
+const staging=Array.from({length:12},(_,i)=>[
+ [-1.76,1.55,-1.45,1.13],
+ [1.74,-1.55,1.42,-1.15]
+]);
+P.forEach((p,i)=>staging[i].forEach((s,k)=>makePerson(p,i,k,s)));
+// Phased human-machine work cycles: reach → contact → operate → inspect → release.
+function animateActors(t){for(const a of actorStates){
+ const u=((t+a.phase)%a.period)/a.period;
+ const smooth2=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+ const reach=smooth2((u-.10)/.17),release=smooth2((u-.79)/.16),engage=reach*(1-release);
+ const pulses=Math.sin(u*2*Math.PI*6),inspection=smooth2((u-.61)/.14)*(1-smooth2((u-.76)/.1));
+ a.waist.position.y=.56+Math.sin(t*1.8+a.phase)*.0025;
+ a.waist.rotation.x=-.038*engage;
+ a.head.rotation.y=(a.k===0?-.14:.13)*inspection+Math.sin(t*.65+a.phase)*.025;
+ a.head.rotation.x=engage*.075;
+ const [left,right]=a.arms;
+ // Forearms bend forward at elbow and keep wrist aligned with panel/table during active contact.
+ for(const [j,arm] of a.arms.entries()){
+  const active=(a.k===0?j===1:j===0),weight=active?1:.48;
+  arm.shoulder.rotation.x=-.13-engage*(active?1.02:.52);
+  arm.shoulder.rotation.z=(j===0?.14:-.14)+engage*(j===0?-.13:.13);
+  arm.elbow.rotation.x=-.10-engage*(active?.86:.48) + (active?Math.sin(t*5+a.phase)*.035*engage:0);
+  arm.wrist.rotation.z=(active?Math.sin(t*7+a.phase)*.085*engage:0);
+ }
+ a.legs[0].hip.rotation.x=.01*Math.sin(t*.8+a.phase);
+ a.legs[1].hip.rotation.x=-.01*Math.sin(t*.8+a.phase);
+ a.g.rotation.y=Math.atan2(a.device.position.x-a.g.position.x,a.device.position.z-a.g.position.z);
+ const buttons=a.device.children;
+ if(a.action==='operate'){const scan=buttons.find(q=>q.material===M.cyan);if(scan)scan.material.emissiveIntensity=.24+.18*Math.max(0,pulses)*engage;}
+ }}
+cycles.push(animateActors);
+// Connect every module with physical bridges + translucent signal channels.
+const flows=[];function bridge(i,j){const a=positions[i],b=positions[j],mid=[(a[0]+b[0])/2,(a[1]+b[1])/2],horizontal=Math.abs(a[0]-b[0])>1;if(horizontal){box(scene,M.base,mid[0],-.08,mid[1],.64,.23,1.05);box(scene,M.white,mid[0],.075,mid[1],.63,.08,.95);box(scene,M.cyan,mid[0],.15,mid[1],.6,.035,.05)}else{box(scene,M.base,mid[0],-.08,mid[1],1.05,.23,1.6);box(scene,M.white,mid[0],.075,mid[1],.95,.08,1.58);box(scene,M.cyan,mid[0],.15,mid[1],.05,.035,1.58)}const a1=[a[0],.19,a[1]],b1=[b[0],.19,b[1]];tube(scene,[a1,b1],.033,M.cyan);for(let k=0;k<2;k++)flows.push({dot:ball(scene,M.cyan,a1[0],.23,a1[2],.075),a:new THREE.Vector3(...a1),b:new THREE.Vector3(...b1),phase:k/2})}
+for(let row=0;row<3;row++)for(let col=0;col<4;col++){const i=row*4+col;if(col<3)bridge(i,i+1);if(row<2)bridge(i,i+4)}
+// Fast, continuous data packets travel through shared branch nodes (not only grid edges).
+const networkJunctions=[[-4.9,-2.9],[0,-2.9],[4.9,-2.9],[-4.9,2.9],[0,2.9],[4.9,2.9]];
+for(const [x,z] of networkJunctions){
+ const disc=cyl(scene,M.dark,x,.205,z,.15,.15,.045,20);disc.castShadow=false;
+ ball(scene,M.cyan,x,.29,z,.09);
+}
+function signalRoute(ax,az,bx,bz){
+ const a=new THREE.Vector3(ax,.24,az),b=new THREE.Vector3(bx,.24,bz);
+ tube(scene,[a.toArray(),b.toArray()],.021,M.sky);
+ for(let k=0;k<3;k++){
+  const dot=ball(scene,k===0?M.white:M.cyan,ax,.29,az,.065);
+  flows.push({dot,a,b,phase:k/3});
+ }
+}
+for(let row=0;row<2;row++)for(let col=0;col<3;col++){
+ const x=-4.9+col*4.9,z=-2.9+row*5.8;
+ signalRoute(x,z,x+4.9,z);
+ signalRoute(x,z,x,z+5.8);
+ signalRoute(x,z,x+4.9,z+5.8);
+}
+signalRoute(-7.35,-5.8,-4.9,-2.9);signalRoute(7.35,-5.8,4.9,-2.9);
+signalRoute(-7.35,5.8,-4.9,2.9);signalRoute(7.35,5.8,4.9,2.9);
+// Optical fiber / energy nucleus at the center of shared network.
+const hub=new THREE.Group();hub.position.set(0,.19,0);scene.add(hub);cyl(hub,M.navy,0,.19,0,.46,.51,.3);tor(hub,M.cyan,0,.4,0,.41,.048);cyl(hub,M.glass,0,.72,0,.2,.22,.65);ball(hub,M.cyan,0,1.08,0,.18);
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();let dragging=false,lastX=0,lastY=0,motion=0,selected=-1;
+renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;motion=0;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
+renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;let dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;motion+=Math.abs(dx)+Math.abs(dy);theta-=dx*.004;phi=Math.max(.25,Math.min(1.3,phi+dy*.004))});
+renderer.domElement.addEventListener('pointerup',e=>{dragging=false;if(motion>8)return;const rect=renderer.domElement.getBoundingClientRect();mouse.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(modules.map(o=>o.root),true);if(hit.length){let o=hit[0].object;while(o&& !modules.some(m=>m.root===o))o=o.parent;const m=modules.find(m=>m.root===o);if(m)select(m.index)}});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();targetSize=Math.max(5.2,Math.min(34,targetSize+e.deltaY*.015))},{passive:false});
+function select(i){selected=i;targetFocus.set(positions[i][0],.8,positions[i][1]);targetSize=8.5;$('detail').textContent=String(i+1).padStart(2,'0')+' · '+names[i];$('career').value=String(i)}
+function overview(){selected=-1;targetFocus.set(0,0,0);targetSize=24;$('detail').textContent='12 ingenierías · 24 especialistas · trabajo coordinado';$('career').value='all'}
+$('career').addEventListener('change',e=>e.target.value==='all'?overview():select(Number(e.target.value)));
+const duration=38;let t=0,playing=true,speed=1,last=performance.now(),scrubbing=false;const smooth=u=>{u=Math.max(0,Math.min(1,u));return u*u*(3-2*u)};
+function update(t){modules.forEach(m=>{m.root.scale.y=1;m.root.position.y=0;m.content.visible=true});cycles.forEach(fn=>fn(t));for(const f of flows){const u=(f.phase+t*.92)%1;f.dot.position.copy(f.a).lerp(f.b,u);f.dot.position.y=.23;f.dot.visible=true}hub.rotation.y=t*.22;hub.visible=true;const current=modules.filter(m=>t>=m.start).length;}
+function loop(now){requestAnimationFrame(loop);const delta=Math.min((now-last)/1000,.09);last=now;if(playing&&!scrubbing)t=(t+delta*speed)%duration;focus.lerp(targetFocus,.055);size+=(targetSize-size)*.06;frame();update(t);$('scrub').value=t;$('time').textContent=`00:${String(Math.floor(t)).padStart(2,'0')} / 00:38`;renderer.render(scene,camera)}
+$('play').addEventListener('click',()=>{playing=!playing;$('play').textContent=playing?'❚❚ Pausar':'▶ Reproducir'});$('restart').addEventListener('click',()=>{t=0;playing=true;$('play').textContent='❚❚ Pausar';overview()});$('speed').addEventListener('change',e=>speed=Number(e.target.value)||1);$('scrub').addEventListener('pointerdown',()=>scrubbing=true);$('scrub').addEventListener('input',e=>t=Number(e.target.value));$('scrub').addEventListener('pointerup',()=>scrubbing=false);$('scrub').addEventListener('change',()=>scrubbing=false);
+if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches){t=28;playing=false;$('play').textContent='▶ Reproducir'}$('loading').style.display='none';resize();requestAnimationFrame(loop);
+
+</script><script>
+window.addEventListener('error', function(e){const el=document.getElementById('loading');if(el){el.style.display='grid';el.textContent='Error al iniciar el 3D: '+(e.message||'Error desconocido')+' · Revisa la conexión o abre el archivo con el servidor local.';} console.error(e.error||e.message)});
+window.addEventListener('unhandledrejection',function(e){const el=document.getElementById('loading');if(el){el.style.display='grid';el.textContent='Error al cargar la escena: '+String(e.reason?.message||e.reason)}console.error(e.reason)});
+</script></body></html>
